@@ -1,0 +1,30 @@
+From 790d25e150c78afbc230e76e05de01f21a75996e Mon Sep 17 00:00:00 2001
+From: Dario Binacchi <dario.binacchi@amarulasolutions.com>
+Date: Thu, 26 May 2022 11:00:33 +0200
+Subject: [PATCH 10/10] configs: imx8mn_bsh_smm_s2: add mtdparts to bootargs
+
+Passing the mtdparts environment variable to the Linux kernel is
+required to properly mount the UBI rootfs.
+
+Co-developed-by: Michael Trimarchi <michael@amarulasolutions.com>
+Signed-off-by: Michael Trimarchi <michael@amarulasolutions.com>
+Signed-off-by: Dario Binacchi <dario.binacchi@amarulasolutions.com>
+---
+ include/configs/imx8mn_bsh_smm_s2.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/configs/imx8mn_bsh_smm_s2.h b/include/configs/imx8mn_bsh_smm_s2.h
+index 17722488ab3f..0dc514f00684 100644
+--- a/include/configs/imx8mn_bsh_smm_s2.h
++++ b/include/configs/imx8mn_bsh_smm_s2.h
+@@ -18,6 +18,7 @@
+ 	"mtdparts=" CONFIG_MTDPARTS_DEFAULT "\0" \
+ 	"nandargs=setenv bootargs " \
+ 		"${optargs} " \
++		"mtdparts=${mtdparts} " \
+ 		"root=${nandroot} " \
+ 		"rootfstype=${nandrootfstype}\0" \
+ 	"nandroot=ubi0:root rw ubi.mtd=nandrootfs\0" \
+-- 
+2.32.0
+

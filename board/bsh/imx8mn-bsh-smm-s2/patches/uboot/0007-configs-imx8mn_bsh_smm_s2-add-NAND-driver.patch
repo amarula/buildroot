@@ -1,0 +1,42 @@
+From 9fc117eedd61161e1449222bf66af4414333d62c Mon Sep 17 00:00:00 2001
+From: Dario Binacchi <dario.binacchi@amarulasolutions.com>
+Date: Wed, 18 May 2022 18:43:34 +0200
+Subject: [PATCH 07/10] configs: imx8mn_bsh_smm_s2: add NAND driver
+
+It allows to boot from NAND.
+
+Co-developed-by: Michael Trimarchi <michael@amarulasolutions.com>
+Signed-off-by: Michael Trimarchi <michael@amarulasolutions.com>
+Signed-off-by: Dario Binacchi <dario.binacchi@amarulasolutions.com>
+---
+ configs/imx8mn_bsh_smm_s2_defconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/configs/imx8mn_bsh_smm_s2_defconfig b/configs/imx8mn_bsh_smm_s2_defconfig
+index 49f425300151..08f52e50609b 100644
+--- a/configs/imx8mn_bsh_smm_s2_defconfig
++++ b/configs/imx8mn_bsh_smm_s2_defconfig
+@@ -30,8 +30,10 @@ CONFIG_SPL_BOARD_INIT=y
+ CONFIG_SPL_BOOTROM_SUPPORT=y
+ CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_SECTOR=y
+ CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x300
++CONFIG_SPL_DMA=y
+ CONFIG_SPL_I2C=y
+ CONFIG_SPL_MTD_SUPPORT=y
++CONFIG_SPL_NAND_SUPPORT=y
+ CONFIG_SPL_POWER=y
+ CONFIG_SPL_WATCHDOG=y
+ CONFIG_SYS_PROMPT="> "
+@@ -65,6 +67,9 @@ CONFIG_SYS_NAND_USE_FLASH_BBT=y
+ CONFIG_NAND_MXS=y
+ CONFIG_NAND_MXS_DT=y
+ CONFIG_SYS_NAND_ONFI_DETECTION=y
++CONFIG_SYS_NAND_U_BOOT_LOCATIONS=y
++CONFIG_SYS_NAND_U_BOOT_OFFS=0xD8000
++CONFIG_SYS_NAND_U_BOOT_OFFS_REDUND=0x4058000
+ CONFIG_PHYLIB=y
+ CONFIG_PHY_NXP_TJA11XX=y
+ CONFIG_DM_ETH=y
+-- 
+2.32.0
+

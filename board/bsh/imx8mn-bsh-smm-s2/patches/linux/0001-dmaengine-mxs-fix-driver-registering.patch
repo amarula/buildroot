@@ -1,0 +1,69 @@
+From 7282c2872d7f7edfff080ace95d35c9dee9fd0bc Mon Sep 17 00:00:00 2001
+From: Dario Binacchi <dario.binacchi@amarulasolutions.com>
+Date: Sun, 22 May 2022 17:40:15 +0200
+Subject: [PATCH v4] dmaengine: mxs: fix driver registering
+
+Driver registration fails on SOC imx8mn as its supplier, the clock
+control module, is not ready. Since platform_driver_probe(), as
+reported by its description, is incompatible with deferred probing,
+we have to use platform_driver_register().
+
+The addition of the `_probe' suffix to the `mxs_dma_driver' variable was
+suggested by the following modpost warning:
+
+WARNING: modpost: vmlinux.o(.data+0xa3900): Section mismatch in reference from the variable mxs_dma_driver to the function .init.text:mxs_dma_probe()
+The variable mxs_dma_driver references
+the function __init mxs_dma_probe()
+If the reference is valid then annotate the
+variable with __init* or __refdata (see linux/init.h) or name the variable:
+*_template, *_timer, *_sht, *_ops, *_probe, *_probe_one, *_console
+
+Fixes: a580b8c5429a ("dmaengine: mxs-dma: add dma support for i.MX23/28")
+Co-developed-by: Michael Trimarchi <michael@amarulasolutions.com>
+Signed-off-by: Michael Trimarchi <michael@amarulasolutions.com>
+Signed-off-by: Dario Binacchi <dario.binacchi@amarulasolutions.com>
+Cc: stable@vger.kernel.org
+
+---
+
+Changes in v4:
+- Restore __init in front of mxs_dma_probe() definition.
+- Rename the mxs_dma_driver variable to mxs_dma_driver_probe.
+- Update the commit message.
+- Use builtin_platform_driver() instead of module_platform_driver().
+
+Changes in v3:
+- Restore __init in front of mxs_dma_init() definition.
+
+Changes in v2:
+- Add the tag "Cc: stable@vger.kernel.org" in the sign-off area.
+
+ drivers/dma/mxs-dma.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/dma/mxs-dma.c b/drivers/dma/mxs-dma.c
+index 994fc4d2aca4..4c878bf1e092 100644
+--- a/drivers/dma/mxs-dma.c
++++ b/drivers/dma/mxs-dma.c
+@@ -834,15 +834,11 @@ static int __init mxs_dma_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static struct platform_driver mxs_dma_driver = {
++static struct platform_driver mxs_dma_driver_probe = {
+ 	.driver		= {
+ 		.name	= "mxs-dma",
+ 		.of_match_table = mxs_dma_dt_ids,
+ 	},
++	.probe = mxs_dma_probe,
+ };
+-
+-static int __init mxs_dma_module_init(void)
+-{
+-	return platform_driver_probe(&mxs_dma_driver, mxs_dma_probe);
+-}
+-subsys_initcall(mxs_dma_module_init);
++builtin_platform_driver(mxs_dma_driver_probe);
+-- 
+2.32.0
+

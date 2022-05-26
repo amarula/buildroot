@@ -1,0 +1,30 @@
+From 16f75e0dfe9d435db7ec129f2e7c0d7a641cd3a0 Mon Sep 17 00:00:00 2001
+From: Michael Trimarchi <michael@amarulasolutions.com>
+Date: Sun, 15 May 2022 11:35:34 +0200
+Subject: [PATCH 05/10] board: bsh: Switch to nand spl load instead of romapi
+
+romapi is not eble to skip bad block so we need to workaround
+using the spl
+
+Signed-off-by: Michael Trimarchi <michael@amarulasolutions.com>
+---
+ board/bsh/imx8mn_smm_s2/spl.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/board/bsh/imx8mn_smm_s2/spl.c b/board/bsh/imx8mn_smm_s2/spl.c
+index 0f61acc6302f..097b60c05551 100644
+--- a/board/bsh/imx8mn_smm_s2/spl.c
++++ b/board/bsh/imx8mn_smm_s2/spl.c
+@@ -18,6 +18,9 @@
+ 
+ int spl_board_boot_device(enum boot_device boot_dev_spl)
+ {
++	if (IS_ENABLED(CONFIG_NAND_MXS) && get_boot_device() != USB_BOOT)
++		return BOOT_DEVICE_NAND;
++
+ 	return BOOT_DEVICE_BOOTROM;
+ }
+ 
+-- 
+2.32.0
+

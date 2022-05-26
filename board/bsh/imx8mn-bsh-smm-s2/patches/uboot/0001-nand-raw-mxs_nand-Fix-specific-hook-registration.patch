@@ -1,0 +1,78 @@
+From da52c7c7d89abdcdf3dd858969094a914ecda9dc Mon Sep 17 00:00:00 2001
+From: Michael Trimarchi <michael@amarulasolutions.com>
+Date: Sun, 15 May 2022 11:35:30 +0200
+Subject: [PATCH 01/10] nand: raw: mxs_nand: Fix specific hook registration
+
+Move the hook after nand_scan_tail is called. The hook must be replaced
+to the mxs specific one but those must to be assignment later in the
+probe function.
+
+With this fix markbad is working again. Before this change:
+
+nand markbad 0xDEC00
+NXS NAND: Writing OOB isn't supported
+NXS NAND: Writing OOB isn't supported
+block 0x000dec00 NOT marked as bad! ERROR 0
+
+Cc: Han Xu <han.xu@nxp.com>
+Cc: Fabio Estevam <festevam@gmail.com>
+Acked-by: Han Xu <han.xu@nxp.com>
+Tested-By: Tim Harvey <tharvey@gateworks.com>
+Signed-off-by: Michael Trimarchi <michael@amarulasolutions.com>
+---
+ drivers/mtd/nand/raw/mxs_nand.c | 32 ++++++++++++++++----------------
+ 1 file changed, 16 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/mtd/nand/raw/mxs_nand.c b/drivers/mtd/nand/raw/mxs_nand.c
+index ee5d7fde9ce1..53f24b9c4b1a 100644
+--- a/drivers/mtd/nand/raw/mxs_nand.c
++++ b/drivers/mtd/nand/raw/mxs_nand.c
+@@ -1246,22 +1246,6 @@ int mxs_nand_setup_ecc(struct mtd_info *mtd)
+ 	/* Enable BCH complete interrupt */
+ 	writel(BCH_CTRL_COMPLETE_IRQ_EN, &bch_regs->hw_bch_ctrl_set);
+ 
+-	/* Hook some operations at the MTD level. */
+-	if (mtd->_read_oob != mxs_nand_hook_read_oob) {
+-		nand_info->hooked_read_oob = mtd->_read_oob;
+-		mtd->_read_oob = mxs_nand_hook_read_oob;
+-	}
+-
+-	if (mtd->_write_oob != mxs_nand_hook_write_oob) {
+-		nand_info->hooked_write_oob = mtd->_write_oob;
+-		mtd->_write_oob = mxs_nand_hook_write_oob;
+-	}
+-
+-	if (mtd->_block_markbad != mxs_nand_hook_block_markbad) {
+-		nand_info->hooked_block_markbad = mtd->_block_markbad;
+-		mtd->_block_markbad = mxs_nand_hook_block_markbad;
+-	}
+-
+ 	return 0;
+ }
+ 
+@@ -1467,6 +1451,22 @@ int mxs_nand_init_ctrl(struct mxs_nand_info *nand_info)
+ 	if (err)
+ 		goto err_free_buffers;
+ 
++	/* Hook some operations at the MTD level. */
++	if (mtd->_read_oob != mxs_nand_hook_read_oob) {
++		nand_info->hooked_read_oob = mtd->_read_oob;
++		mtd->_read_oob = mxs_nand_hook_read_oob;
++	}
++
++	if (mtd->_write_oob != mxs_nand_hook_write_oob) {
++		nand_info->hooked_write_oob = mtd->_write_oob;
++		mtd->_write_oob = mxs_nand_hook_write_oob;
++	}
++
++	if (mtd->_block_markbad != mxs_nand_hook_block_markbad) {
++		nand_info->hooked_block_markbad = mtd->_block_markbad;
++		mtd->_block_markbad = mxs_nand_hook_block_markbad;
++	}
++
+ 	err = nand_register(0, mtd);
+ 	if (err)
+ 		goto err_free_buffers;
+-- 
+2.32.0
+

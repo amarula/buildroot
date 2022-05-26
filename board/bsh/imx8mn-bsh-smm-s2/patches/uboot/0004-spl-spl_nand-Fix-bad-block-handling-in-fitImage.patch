@@ -1,0 +1,42 @@
+From 85d26c1c5e503d1ecae5818684dc54029bf6959d Mon Sep 17 00:00:00 2001
+From: Michael Trimarchi <michael@amarulasolutions.com>
+Date: Sun, 15 May 2022 11:35:33 +0200
+Subject: [PATCH 04/10] spl: spl_nand: Fix bad block handling in fitImage
+
+If the fitImage has some bad block in fit image area, the
+offset must be recalulcated. This should be done always.
+After implementing it in mxs now is possible to call the function
+even for that platform.
+
+Cc: Fabio Estevam <festevam@gmail.com>
+Tested-By: Tim Harvey <tharvey@gateworks.com>
+Reviewed-by: Tom Rini <trini@konsulko.com>
+Signed-off-by: Michael Trimarchi <michael@amarulasolutions.com>
+---
+ common/spl/spl_nand.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/common/spl/spl_nand.c b/common/spl/spl_nand.c
+index fc61b447a52e..82a10ffa63aa 100644
+--- a/common/spl/spl_nand.c
++++ b/common/spl/spl_nand.c
+@@ -43,15 +43,12 @@ static ulong spl_nand_fit_read(struct spl_load_info *load, ulong offs,
+ 			       ulong size, void *dst)
+ {
+ 	int err;
+-#ifdef CONFIG_SYS_NAND_BLOCK_SIZE
+ 	ulong sector;
+ 
+ 	sector = *(int *)load->priv;
+-	offs = sector + nand_spl_adjust_offset(sector, offs - sector);
+-#else
+ 	offs *= load->bl_len;
+ 	size *= load->bl_len;
+-#endif
++	offs = sector + nand_spl_adjust_offset(sector, offs - sector);
+ 	err = nand_spl_load_image(offs, size, dst);
+ 	if (err)
+ 		return 0;
+-- 
+2.32.0
+

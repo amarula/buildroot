@@ -1,0 +1,95 @@
+From c2e0b6f589f8f73c5cd9bd82938021f34b3b875b Mon Sep 17 00:00:00 2001
+From: Michael Trimarchi <michael@amarulasolutions.com>
+Date: Sun, 15 May 2022 11:35:32 +0200
+Subject: [PATCH 03/10] arm: mach-imx: cmd_nandbcb fix bad block handling
+
+The badblock should be skipped properly in reading and writing.
+Fix the logic. The bcb struct is written, skipping the bad block,
+so we need to read using the same logic. This was tested create
+bad block in the area and then flash it and read it back.
+
+Acked-by: Han Xu <han.xu@nxp.com>
+Tested-By: Tim Harvey <tharvey@gateworks.com>
+Signed-off-by: Michael Trimarchi <michael@amarulasolutions.com>
+---
+ arch/arm/mach-imx/cmd_nandbcb.c | 21 +++++++--------------
+ 1 file changed, 7 insertions(+), 14 deletions(-)
+
+diff --git a/arch/arm/mach-imx/cmd_nandbcb.c b/arch/arm/mach-imx/cmd_nandbcb.c
+index f119e9f88d5c..c54f52b343c7 100644
+--- a/arch/arm/mach-imx/cmd_nandbcb.c
++++ b/arch/arm/mach-imx/cmd_nandbcb.c
+@@ -506,10 +506,6 @@ static int read_fcb(struct boot_config *boot_cfg, struct fcb_block *fcb,
+ 	int ret = 0;
+ 
+ 	mtd = boot_cfg->mtd;
+-	if (mtd_block_isbad(mtd, off)) {
+-		printf("Block %d is bad, skipped\n", (int)CONV_TO_BLOCKS(off));
+-		return 1;
+-	}
+ 
+ 	fcb_raw_page = kzalloc(mtd->writesize + mtd->oobsize, GFP_KERNEL);
+ 	if (!fcb_raw_page) {
+@@ -530,7 +526,7 @@ static int read_fcb(struct boot_config *boot_cfg, struct fcb_block *fcb,
+ 		else if (plat_config.misc_flags & FCB_ENCODE_BCH_40b)
+ 			mxs_nand_mode_fcb_40bit(mtd);
+ 
+-		ret = nand_read(mtd, off, &size, (u_char *)fcb);
++		ret = nand_read_skip_bad(mtd, off, &size, NULL, mtd->size, (u_char *)fcb);
+ 
+ 		/* switch BCH back */
+ 		mxs_nand_mode_normal(mtd);
+@@ -617,6 +613,7 @@ static int write_fcb(struct boot_config *boot_cfg, struct fcb_block *fcb)
+ 	for (i = 0; i < g_boot_search_count; i++) {
+ 		if (mtd_block_isbad(mtd, off)) {
+ 			printf("Block %d is bad, skipped\n", i);
++			off += mtd->erasesize;
+ 			continue;
+ 		}
+ 
+@@ -676,20 +673,15 @@ static int read_dbbt(struct boot_config *boot_cfg, struct dbbt_block *dbbt,
+ 		      void *dbbt_data_page, loff_t off)
+ {
+ 	size_t size;
++	size_t actual_size;
+ 	struct mtd_info *mtd;
+ 	loff_t to;
+ 	int ret;
+ 
+ 	mtd = boot_cfg->mtd;
+ 
+-	if (mtd_block_isbad(mtd, off)) {
+-		printf("Block %d is bad, skipped\n",
+-		       (int)CONV_TO_BLOCKS(off));
+-		return 1;
+-	}
+-
+ 	size = sizeof(struct dbbt_block);
+-	ret = nand_read(mtd, off, &size, (u_char *)dbbt);
++	ret = nand_read_skip_bad(mtd, off, &size, &actual_size, mtd->size, (u_char *)dbbt);
+ 	printf("NAND DBBT read from 0x%llx offset 0x%zx read: %s\n",
+ 	       off, size, ret ? "ERROR" : "OK");
+ 	if (ret)
+@@ -697,9 +689,9 @@ static int read_dbbt(struct boot_config *boot_cfg, struct dbbt_block *dbbt,
+ 
+ 	/* dbbtpages == 0 if no bad blocks */
+ 	if (dbbt->dbbtpages > 0) {
+-		to = off + 4 * mtd->writesize;
++		to = off + 4 * mtd->writesize + actual_size - size;
+ 		size = mtd->writesize;
+-		ret = nand_read(mtd, to, &size, dbbt_data_page);
++		ret = nand_read_skip_bad(mtd, to, &size, NULL, mtd->size, dbbt_data_page);
+ 		printf("DBBT data read from 0x%llx offset 0x%zx read: %s\n",
+ 		       to, size, ret ? "ERROR" : "OK");
+ 
+@@ -729,6 +721,7 @@ static int write_dbbt(struct boot_config *boot_cfg, struct dbbt_block *dbbt,
+ 		if (mtd_block_isbad(mtd, off)) {
+ 			printf("Block %d is bad, skipped\n",
+ 			       (int)(i + CONV_TO_BLOCKS(off)));
++			off += mtd->erasesize;
+ 			continue;
+ 		}
+ 
+-- 
+2.32.0
+

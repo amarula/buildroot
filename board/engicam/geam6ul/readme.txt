@@ -24,7 +24,7 @@ Build all components:
   make
 
 You will find the following files in output/images/:
-  - imx6ul-geam-kit.dtb
+  - imx6ul-geam.dtb
   - rootfs.ext4
   - rootfs.tar
   - sdcard.img
